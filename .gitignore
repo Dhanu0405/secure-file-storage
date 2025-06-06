@@ -1,0 +1,17 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Instance folder (contains the SQLite DB)
+instance/
+
+# Uploaded files (encrypted user files)
+uploads/
+
+# Secret encryption key
+master.key
+
+# Environment files
+.env
+.env.*
