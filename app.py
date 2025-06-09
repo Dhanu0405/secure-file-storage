@@ -8,6 +8,14 @@ from werkzeug.utils import secure_filename
 from cryptography.fernet import Fernet
 import os
 
+from models import File
+import hashlib
+
+from flask import send_file, make_response
+from utils import decrypt_file
+import io
+
+
 # ---------------- Flask App Setup ---------------- #
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -83,7 +91,8 @@ def login():
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    return f"Welcome, {current_user.email}!"
+    files = File.query.filter_by(user_id=current_user.id).all()
+    return render_template('dashboard.html', files=files)
 
 @app.route('/logout')
 @login_required
@@ -91,6 +100,7 @@ def logout():
     logout_user()
     return redirect(url_for('login'))
 
+# Upload route
 # Upload route
 @app.route('/upload', methods=['GET', 'POST'])
 @login_required
@@ -106,28 +116,85 @@ def upload():
             flash('File type not allowed.')
             return redirect(request.url)
 
-        filename = secure_filename(file.filename)
+        # Prepare secure filename
+        original_filename = secure_filename(file.filename)
+        stored_filename = original_filename + '.enc'
+
+        # Create folder based on user ID
         user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
         os.makedirs(user_folder, exist_ok=True)
 
-        # Get encrypted key from current user and decrypt it
-        encrypted_key = current_user.encrypted_user_key.encode()
-        user_fernet_key = master_fernet.decrypt(encrypted_key)
-        user_fernet = Fernet(user_fernet_key)
-
-        # Encrypt file and save
+        # Read file bytes
         file_data = file.read()
+
+        # Retrieve user-specific key
+        encrypted_user_key = current_user.encrypted_user_key.encode()
+        with open('master.key', 'rb') as key_file:
+            master_key = key_file.read()
+        master_fernet = Fernet(master_key)
+        user_key = master_fernet.decrypt(encrypted_user_key)
+        user_fernet = Fernet(user_key)
+
+        # Encrypt the file
         encrypted_data = user_fernet.encrypt(file_data)
 
-        encrypted_path = os.path.join(user_folder, filename + '.enc')
+        # Calculate SHA-256 hash of the original file
+        file_hash = hashlib.sha256(file_data).hexdigest()
+
+        # Save encrypted file
+        encrypted_path = os.path.join(user_folder, stored_filename)
         with open(encrypted_path, 'wb') as f:
             f.write(encrypted_data)
 
-        flash('Encrypted file uploaded successfully.')
+        # ✅ Store file metadata in database, including file_path
+        new_file = File(
+            user_id=current_user.id,
+            filename=original_filename,
+            stored_filename=stored_filename,
+            file_path=encrypted_path,  # 🔒 Add this line to fix NOT NULL issue
+            file_hash=file_hash
+        )
+        db.session.add(new_file)
+        db.session.commit()
+
+        flash('Encrypted file uploaded and metadata saved.')
         return redirect(url_for('dashboard'))
 
     return render_template('upload.html')
 
+
+@app.route('/download/<int:file_id>')
+@login_required
+def download_file(file_id):
+    file_record = File.query.get_or_404(file_id)
+
+    # Ensure the file belongs to the logged-in user
+    if file_record.user_id != current_user.id:
+        flash("Unauthorized access.")
+        return redirect(url_for('dashboard'))
+
+    # Load the encrypted user key and decrypt it using the master key
+    encrypted_user_key = current_user.encrypted_user_key.encode()
+    master_key_path = 'master.key'
+
+    # Decrypt the file using helper function from utils.py
+    from utils import decrypt_file
+    decrypted_data = decrypt_file(
+        file_path=file_record.file_path,
+        encrypted_user_key=encrypted_user_key,
+        master_key_path=master_key_path
+    )
+
+    # Send the decrypted file with the original filename
+    from flask import send_file
+    from io import BytesIO
+
+    return send_file(BytesIO(decrypted_data),
+                     download_name=file_record.filename,
+                     as_attachment=True,
+                     mimetype='application/octet-stream')
+
+#Landing Page Route
 @app.route('/')
 def home():
     return render_template('index.html')

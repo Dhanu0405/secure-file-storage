@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Secure File Storage</title>
+    <link href="{{ url_for('static', filename='dashboard.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-shield-alt"></i>
+                Secure Storage
+            </a>
+        </div>
+        <div class="navbar-right">
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-light">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </a>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        <div class="welcome-section">
+            <div class="welcome-text">
+                Welcome back, <span>{{ current_user.email }}</span>
+            </div>
+            <a href="{{ url_for('upload') }}" class="btn btn-success">
+                <i class="fas fa-plus"></i>
+                New Upload
+            </a>
+        </div>
+
+        {% if files %}
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>File Name</th>
+                            <th>Hash</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for file in files %}
+                            <tr>
+                                <td>
+                                    <div class="file-name">
+                                        <i class="fas fa-file"></i>
+                                        {{ file.filename }}
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="file-hash">{{ file.file_hash }}</div>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('download_file', file_id=file.id) }}" class="btn btn-success">
+                                        <i class="fas fa-download"></i>
+                                        Download
+                                    </a>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <p>No files uploaded yet. Start by uploading your first file!</p>
+                <a href="{{ url_for('upload') }}" class="btn btn-success">
+                    <i class="fas fa-upload"></i>
+                    Upload Your First File
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Secure File Storage. All rights reserved.</p>
+    </footer>
+</body>
+</html>

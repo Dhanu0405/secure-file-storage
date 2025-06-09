@@ -2,25 +2,44 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Register</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Secure File Storage</title>
     <link href="{{ url_for('static', filename='auth.css') }}" rel="stylesheet">
     <link href="{{ url_for('static', filename='footer.css') }}" rel="stylesheet">
 </head>
 <body>
-
-<div class="container">
-    <h2>Create an Account</h2>
-    <form method="POST">
-        <label for="email">Email:</label><br>
-        <input type="email" name="email" required class="form-control"><br>
+    <div class="container">
+        <h2>Create Account</h2>
         
-        <label for="password">Password:</label><br>
-        <input type="password" name="password" required class="form-control"><br>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-        <button type="submit" class="btn btn-success w-100">Register</button>
-    </form>
-</div>
+        <form method="POST">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required class="form-control" placeholder="Enter your email">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required class="form-control" placeholder="Choose a strong password">
+            </div>
 
-{% include 'footer.html' %}
+            <button type="submit" class="btn btn-success">Create Account</button>
+        </form>
+
+        <div class="auth-links">
+            Already have an account? <a href="{{ url_for('login') }}">Sign in</a>
+        </div>
+    </div>
+
+    {% include 'footer.html' %}
 </body>
 </html>

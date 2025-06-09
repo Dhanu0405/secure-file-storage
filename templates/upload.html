@@ -1,6 +1,121 @@
-<h2>Upload File</h2>
-<form method="POST" enctype="multipart/form-data">
-    <input type="file" name="file" required><br><br>
-    <input type="submit" value="Upload">
-</form>
-<a href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload File - Secure File Storage</title>
+    <link href="{{ url_for('static', filename='upload.css') }}" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-left">
+            <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                <i class="fas fa-shield-alt"></i>
+                Secure Storage
+            </a>
+        </div>
+        <div class="navbar-right">
+            <a href="{{ url_for('logout') }}" class="btn btn-outline-light">
+                <i class="fas fa-sign-out-alt"></i>
+                Logout
+            </a>
+        </div>
+    </nav>
+
+    <div class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="upload-container">
+            <h1 class="upload-title">
+                <i class="fas fa-cloud-upload-alt"></i>
+                Upload File
+            </h1>
+
+            <form method="POST" enctype="multipart/form-data" class="upload-form">
+                <div class="file-upload-wrapper">
+                    <input type="file" name="file" id="file" class="file-upload-input" required onchange="updateFileName(this)">
+                    <label for="file" class="file-upload-label">
+                        <i class="fas fa-file-upload file-upload-icon"></i>
+                        <span class="file-upload-text">Choose a file or drag it here</span>
+                        <span class="file-upload-hint">Maximum file size: 10MB</span>
+                        <div id="fileName" class="file-name"></div>
+                    </label>
+                </div>
+
+                <button type="submit" class="btn-upload">
+                    <i class="fas fa-upload"></i>
+                    Upload File
+                </button>
+            </form>
+
+            <a href="{{ url_for('dashboard') }}" class="back-link">
+                <i class="fas fa-arrow-left"></i>
+                Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 Secure File Storage. All rights reserved.</p>
+    </footer>
+
+    <script>
+        function updateFileName(input) {
+            const fileName = input.files[0]?.name;
+            const fileNameElement = document.getElementById('fileName');
+            if (fileName) {
+                fileNameElement.textContent = fileName;
+            } else {
+                fileNameElement.textContent = '';
+            }
+        }
+
+        // Drag and drop functionality
+        const dropZone = document.querySelector('.file-upload-label');
+        const fileInput = document.querySelector('.file-upload-input');
+
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dropZone.classList.add('highlight');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('highlight');
+        }
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            fileInput.files = files;
+            updateFileName(fileInput);
+        }
+    </script>
+</body>
+</html>
