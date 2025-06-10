@@ -2,80 +2,62 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Integrity Verifier</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 2rem;
-            background-color: #f7f7f7;
-        }
-        .container {
-            max-width: 600px;
-            margin: auto;
-            background-color: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-        }
-        input[type="file"] {
-            margin: 1rem 0;
-        }
-        .hash-box {
-            background-color: #f0f0f0;
-            padding: 1rem;
-            border-radius: 6px;
-            word-break: break-all;
-            font-family: monospace;
-        }
-        .copy-btn {
-            background-color: #007bff;
-            color: white;
-            padding: 0.3rem 0.8rem;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            margin-top: 0.5rem;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='verify.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
-        <h2>File Integrity Verifier</h2>
-        <p>Select a file to calculate its SHA-256 hash directly in your browser:</p>
-        <input type="file" id="fileInput">
-        <div id="hashResult" class="hash-box" style="display:none;"></div>
-        <button id="copyCertutil" class="copy-btn" style="display:none;">Copy certutil command</button>
-        <p id="copiedMsg" style="color: green; display: none;">Copied!</p>
+    <nav class="navbar">
+        <a href="/" class="navbar-brand">
+            <i class="fas fa-shield-alt"></i>
+            Secure Storage
+        </a>
+        <div class="navbar-right">
+            <a href="/logout" class="btn btn-primary">Logout</a>
+        </div>
+    </nav>
+
+    <div class="verify-container">
+        <div class="verify-header">
+            <h1><i class="fas fa-fingerprint"></i> File Integrity Verifier</h1>
+            <p>Select a file to calculate its SHA-256 hash directly in your browser</p>
+        </div>
+
+        <div class="file-upload-area">
+            <label for="fileInput" class="file-upload-label">
+                <i class="fas fa-cloud-upload-alt"></i>
+                <span>Choose a file or drag it here</span>
+            </label>
+            <input type="file" id="fileInput" class="file-input">
+        </div>
+
+        <div id="hashResult" class="hash-box" style="display:none;">
+            <div class="hash-header">
+                <i class="fas fa-hashtag"></i>
+                <span>SHA-256 Hash</span>
+            </div>
+            <div class="hash-content"></div>
+        </div>
+
+        <button id="copyCertutil" class="copy-btn" style="display:none;">
+            <i class="fas fa-copy"></i>
+            Copy certutil command
+        </button>
+        <p id="copiedMsg" class="copy-message" style="display: none;">
+            <i class="fas fa-check"></i>
+            Copied to clipboard!
+        </p>
     </div>
 
-    <script>
-        document.getElementById('fileInput').addEventListener('change', async function () {
-            const file = this.files[0];
-            if (!file) return;
+    <div class="action-buttons">
+        <a href="/dashboard" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i>
+            Back to Dashboard
+        </a>
+    </div>
 
-            const buffer = await file.arrayBuffer();
-            const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-
-            const resultBox = document.getElementById('hashResult');
-            resultBox.style.display = 'block';
-            resultBox.textContent = `SHA-256 Hash:\n${hashHex}`;
-
-            const certutilCmd = `certutil -hashfile "${file.name}" SHA256`;
-            const copyBtn = document.getElementById('copyCertutil');
-            copyBtn.style.display = 'inline-block';
-
-            copyBtn.onclick = () => {
-                navigator.clipboard.writeText(certutilCmd).then(() => {
-                    document.getElementById('copiedMsg').style.display = 'inline';
-                    setTimeout(() => {
-                        document.getElementById('copiedMsg').style.display = 'none';
-                    }, 2000);
-                });
-            };
-        });
-    </script>
+    <script src="{{ url_for('static', filename='js/verify.js') }}"></script>
 </body>
 </html>

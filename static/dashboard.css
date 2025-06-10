@@ -33,6 +33,7 @@ body {
 .navbar-right {
     display: flex;
     align-items: center;
+    gap: 1rem;
 }
 
 .navbar-brand {
@@ -217,7 +218,7 @@ footer {
         padding: 1rem;
     }
 
-    .nav-actions {
+    .navbar-right {
         gap: 0.5rem;
     }
 
