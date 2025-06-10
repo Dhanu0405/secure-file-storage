@@ -203,15 +203,6 @@ body {
     margin-bottom: 1.5rem;
 }
 
-/* Footer Styles */
-/* footer {
-    background: #2d3748;
-    color: #e2e8f0;
-    text-align: center;
-    padding: 1.5rem;
-    margin-top: auto;
-} */
-
 /* Responsive Design */
 @media (max-width: 768px) {
     .navbar {
