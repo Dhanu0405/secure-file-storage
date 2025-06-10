@@ -15,6 +15,11 @@ from flask import send_file, make_response
 from utils import decrypt_file
 import io
 
+from flask import send_file, flash, redirect, url_for
+from io import BytesIO
+from cryptography.fernet import InvalidToken
+from utils import decrypt_file
+
 
 # ---------------- Flask App Setup ---------------- #
 app = Flask(__name__)
@@ -88,19 +93,20 @@ def login():
             flash('Login failed.')
     return render_template('login.html')
 
+# Dashboard route
 @app.route('/dashboard')
 @login_required
 def dashboard():
     files = File.query.filter_by(user_id=current_user.id).all()
     return render_template('dashboard.html', files=files)
 
+# Logout route
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('login'))
 
-# Upload route
 # Upload route
 @app.route('/upload', methods=['GET', 'POST'])
 @login_required
@@ -173,26 +179,39 @@ def download_file(file_id):
         flash("Unauthorized access.")
         return redirect(url_for('dashboard'))
 
-    # Load the encrypted user key and decrypt it using the master key
+    # Load encrypted user key and master key path
     encrypted_user_key = current_user.encrypted_user_key.encode()
     master_key_path = 'master.key'
 
-    # Decrypt the file using helper function from utils.py
-    from utils import decrypt_file
-    decrypted_data = decrypt_file(
-        file_path=file_record.file_path,
-        encrypted_user_key=encrypted_user_key,
-        master_key_path=master_key_path
+    try:
+        # Attempt to decrypt the file
+        decrypted_data = decrypt_file(
+            file_path=file_record.file_path,
+            encrypted_user_key=encrypted_user_key,
+            master_key_path=master_key_path
+        )
+    except InvalidToken:
+        # If file has been tampered with or corrupted
+        flash("Error: The file appears to be corrupted or has been tampered with.")
+        return redirect(url_for('dashboard'))
+    except Exception as e:
+        # Catch other unexpected errors
+        flash(f"Unexpected error during download: {str(e)}")
+        return redirect(url_for('dashboard'))
+
+    # Send decrypted file
+    return send_file(
+        BytesIO(decrypted_data),
+        download_name=file_record.filename,
+        as_attachment=True,
+        mimetype='application/octet-stream'
     )
 
-    # Send the decrypted file with the original filename
-    from flask import send_file
-    from io import BytesIO
-
-    return send_file(BytesIO(decrypted_data),
-                     download_name=file_record.filename,
-                     as_attachment=True,
-                     mimetype='application/octet-stream')
+#Verify Route
+@app.route('/verify')
+@login_required
+def verify():
+    return render_template('verify.html')
 
 #Landing Page Route
 @app.route('/')

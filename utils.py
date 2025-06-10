@@ -13,3 +13,7 @@ def decrypt_file(file_path, encrypted_user_key, master_key_path='master.key'):
 
     decrypted_data = user_fernet.decrypt(encrypted_data)
     return decrypted_data
+
+def calculate_sha256(file_bytes):
+
+    return hashlib.sha256(file_bytes).hexdigest()
