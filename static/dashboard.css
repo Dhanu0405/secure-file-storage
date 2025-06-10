@@ -256,4 +256,19 @@ body {
 .welcome-section,
 .empty-state {
     animation: fadeIn 0.5s ease-out;
-} 
+}
+
+.flash-container {
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  background-color: #ffe5e5;
+  color: #a10000;
+  border-radius: 5px;
+  text-align: center;
+  opacity: 1;
+}
+
+.flash-message {
+  font-weight: bold;
+}

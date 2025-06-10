@@ -168,44 +168,35 @@ def upload():
 
     return render_template('upload.html')
 
-
+# Download route
 @app.route('/download/<int:file_id>')
 @login_required
 def download_file(file_id):
     file_record = File.query.get_or_404(file_id)
 
-    # Ensure the file belongs to the logged-in user
     if file_record.user_id != current_user.id:
         flash("Unauthorized access.")
         return redirect(url_for('dashboard'))
 
-    # Load encrypted user key and master key path
+    from utils import decrypt_file
     encrypted_user_key = current_user.encrypted_user_key.encode()
-    master_key_path = 'master.key'
 
     try:
-        # Attempt to decrypt the file
         decrypted_data = decrypt_file(
             file_path=file_record.file_path,
             encrypted_user_key=encrypted_user_key,
-            master_key_path=master_key_path
+            master_key_path='master.key'
         )
     except InvalidToken:
-        # If file has been tampered with or corrupted
-        flash("Error: The file appears to be corrupted or has been tampered with.")
-        return redirect(url_for('dashboard'))
-    except Exception as e:
-        # Catch other unexpected errors
-        flash(f"Unexpected error during download: {str(e)}")
+        flash("Decryption failed! The file may have been tampered with or corrupted.")
         return redirect(url_for('dashboard'))
 
-    # Send decrypted file
-    return send_file(
-        BytesIO(decrypted_data),
-        download_name=file_record.filename,
-        as_attachment=True,
-        mimetype='application/octet-stream'
-    )
+    from flask import send_file
+    from io import BytesIO
+    return send_file(BytesIO(decrypted_data),
+                     download_name=file_record.filename,
+                     as_attachment=True,
+                     mimetype='application/octet-stream')
 
 #Verify Route
 @app.route('/verify')

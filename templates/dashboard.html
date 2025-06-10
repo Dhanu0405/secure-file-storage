@@ -27,6 +27,16 @@
         </div>
     </nav>
 
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-container" id="flash-container">
+                {% for message in messages %}
+                    <div class="flash-message">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
     <div class="main-content">
         <div class="welcome-section">
             <div class="welcome-text">
@@ -84,6 +94,18 @@
     </div>
 
     {% include 'footer.html' %}
+
+    <script>
+    setTimeout(() => {
+        const flash = document.getElementById('flash-container');
+        if (flash) {
+        flash.style.transition = 'opacity 0.5s ease-out';
+        flash.style.opacity = '0';
+        setTimeout(() => flash.remove(), 500); // remove element after fade out
+        }
+    }, 3000); // 3 seconds
+    </script>
+
     
 </body>
 </html>
