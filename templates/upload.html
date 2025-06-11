@@ -23,16 +23,17 @@
         </div>
     </nav>
 
-    <div class="main-content">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="flash-message flash-{{ category }}">
-                        {{ message }}
-                    </div>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="flash-container" id="flash-container">
+                {% for message in messages %}
+                    <div class="flash-message">{{ message }}</div>
                 {% endfor %}
-            {% endif %}
-        {% endwith %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="main-content">
 
         <div class="upload-container">
             <h1 class="upload-title">
@@ -66,54 +67,8 @@
 
     {% include 'footer.html' %}
 
-    <script>
-        function updateFileName(input) {
-            const fileName = input.files[0]?.name;
-            const fileNameElement = document.getElementById('fileName');
-            if (fileName) {
-                fileNameElement.textContent = fileName;
-            } else {
-                fileNameElement.textContent = '';
-            }
-        }
+    <script src="{{ url_for('static', filename='js/upload.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/flash.js') }}"></script>
 
-        // Drag and drop functionality
-        const dropZone = document.querySelector('.file-upload-label');
-        const fileInput = document.querySelector('.file-upload-input');
-
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, preventDefaults, false);
-        });
-
-        function preventDefaults(e) {
-            e.preventDefault();
-            e.stopPropagation();
-        }
-
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, highlight, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, unhighlight, false);
-        });
-
-        function highlight(e) {
-            dropZone.classList.add('highlight');
-        }
-
-        function unhighlight(e) {
-            dropZone.classList.remove('highlight');
-        }
-
-        dropZone.addEventListener('drop', handleDrop, false);
-
-        function handleDrop(e) {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            fileInput.files = files;
-            updateFileName(fileInput);
-        }
-    </script>
 </body>
 </html>

@@ -95,17 +95,7 @@
 
     {% include 'footer.html' %}
 
-    <script>
-    setTimeout(() => {
-        const flash = document.getElementById('flash-container');
-        if (flash) {
-        flash.style.transition = 'opacity 0.5s ease-out';
-        flash.style.opacity = '0';
-        setTimeout(() => flash.remove(), 500); // remove element after fade out
-        }
-    }, 3000); // 3 seconds
-    </script>
+    <script src="{{ url_for('static', filename='js/flash.js') }}"></script>
 
-    
 </body>
 </html>

@@ -216,24 +216,19 @@ body {
 }
 
 /* Flash Messages */
+.flash-container {
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  background-color: #ffe5e5;
+  color: #a10000;
+  border-radius: 5px;
+  text-align: center;
+  opacity: 1;
+}
+
 .flash-message {
-    padding: 1rem;
-    border-radius: 8px;
-    margin-bottom: 1.5rem;
-    text-align: center;
-    animation: fadeIn 0.5s ease-out;
-}
-
-.flash-error {
-    background-color: #fed7d7;
-    color: #c53030;
-    border: 1px solid #feb2b2;
-}
-
-.flash-success {
-    background-color: #c6f6d5;
-    color: #2f855a;
-    border: 1px solid #9ae6b4;
+  font-weight: bold;
 }
 
 /* Animations */

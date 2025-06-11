@@ -1,25 +1,17 @@
-from flask import Flask, render_template, redirect, request, url_for, flash
+from flask import Flask, render_template, redirect, request, url_for, flash, send_file, make_response
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-from models import db, User
-
+from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.utils import secure_filename
-from cryptography.fernet import Fernet
+from cryptography.fernet import Fernet, InvalidToken
+from models import db, User
 import os
-
 from models import File
 import hashlib
-
-from flask import send_file, make_response
 from utils import decrypt_file
 import io
-
-from flask import send_file, flash, redirect, url_for
 from io import BytesIO
-from cryptography.fernet import InvalidToken
-from utils import decrypt_file
-
 
 # ---------------- Flask App Setup ---------------- #
 app = Flask(__name__)
@@ -55,6 +47,12 @@ with open(MASTER_KEY_FILE, "rb") as f:
     master_key = f.read()
 
 master_fernet = Fernet(master_key)
+
+#Error Handler for large files
+@app.errorhandler(RequestEntityTooLarge)
+def handle_large_file(e):
+    flash("File too large. Max allowed size is 10MB.")
+    return redirect(request.url)
 
 # ---------------- Routes ---------------- #
 
@@ -114,26 +112,35 @@ def upload():
     if request.method == 'POST':
         file = request.files.get('file')
 
+        # 1. Check if no file was selected
         if not file or file.filename == '':
             flash('No file selected.')
             return redirect(request.url)
 
+        # 2. Check for unsupported file types
         if not allowed_file(file.filename):
-            flash('File type not allowed.')
+            flash('File type not allowed. Please upload only supported file types.')
             return redirect(request.url)
 
-        # Prepare secure filename
+        # 3. (Optional) Check file size limit (e.g., max 10MB)
+        max_size = 10 * 1024 * 1024  # 10 MB
+        file.seek(0, os.SEEK_END)
+        file_length = file.tell()
+        file.seek(0)  # Reset pointer to read from start again
+
+        if file_length > max_size:
+            flash('File size exceeds the 10MB limit.')
+            return redirect(request.url)
+
+        # 4. Proceed with encryption and saving
         original_filename = secure_filename(file.filename)
         stored_filename = original_filename + '.enc'
 
-        # Create folder based on user ID
         user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(current_user.id))
         os.makedirs(user_folder, exist_ok=True)
 
-        # Read file bytes
         file_data = file.read()
 
-        # Retrieve user-specific key
         encrypted_user_key = current_user.encrypted_user_key.encode()
         with open('master.key', 'rb') as key_file:
             master_key = key_file.read()
@@ -141,29 +148,25 @@ def upload():
         user_key = master_fernet.decrypt(encrypted_user_key)
         user_fernet = Fernet(user_key)
 
-        # Encrypt the file
         encrypted_data = user_fernet.encrypt(file_data)
-
-        # Calculate SHA-256 hash of the original file
         file_hash = hashlib.sha256(file_data).hexdigest()
 
-        # Save encrypted file
         encrypted_path = os.path.join(user_folder, stored_filename)
         with open(encrypted_path, 'wb') as f:
             f.write(encrypted_data)
 
-        # ✅ Store file metadata in database, including file_path
+        # Save file metadata in database
         new_file = File(
             user_id=current_user.id,
             filename=original_filename,
             stored_filename=stored_filename,
-            file_path=encrypted_path,  # 🔒 Add this line to fix NOT NULL issue
+            file_path=encrypted_path,
             file_hash=file_hash
         )
         db.session.add(new_file)
         db.session.commit()
 
-        flash('Encrypted file uploaded and metadata saved.')
+        flash('File uploaded, encrypted, and saved successfully.')
         return redirect(url_for('dashboard'))
 
     return render_template('upload.html')
