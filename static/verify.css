@@ -373,4 +373,10 @@ body {
         padding: 0.6rem 1.25rem;
         font-size: 0.95rem;
     }
+}
+
+.back-link-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 2rem;
 } 

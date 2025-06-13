@@ -63,6 +63,11 @@ def register():
         email = request.form['email']
         password = bcrypt.generate_password_hash(request.form['password']).decode('utf-8')
 
+        # Check if email already exists
+        if User.query.filter_by(email=email).first():
+            flash('Email already registered. Please use a different email or login.', 'error')
+            return redirect(url_for('register'))
+
         # Generate and encrypt user-specific Fernet key
         user_key = Fernet.generate_key()
         encrypted_user_key = master_fernet.encrypt(user_key)
@@ -73,9 +78,15 @@ def register():
             password=password,
             encrypted_user_key=encrypted_user_key.decode()
         )
-        db.session.add(new_user)
-        db.session.commit()
-        return redirect(url_for('login'))
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            flash('Registration successful! Please login.', 'success')
+            return redirect(url_for('login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred during registration. Please try again.', 'error')
+            return redirect(url_for('register'))
 
     return render_template('register.html')
 
@@ -86,9 +97,10 @@ def login():
         user = User.query.filter_by(email=request.form['email']).first()
         if user and bcrypt.check_password_hash(user.password, request.form['password']):
             login_user(user)
+            flash('Login successful!', 'success')
             return redirect(url_for('dashboard'))
         else:
-            flash('Login failed.')
+            flash('Login failed. Please check your email and password.', 'error')
     return render_template('login.html')
 
 # Dashboard route
